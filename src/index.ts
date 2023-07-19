@@ -1,11 +1,64 @@
-/**
- * This file is just a silly example to show everything working in the browser.
- * When you're ready to start on your site, clear the file. Happy hacking!
- **/
+import { v4 as uuidv4 } from 'uuid';
 
-import confetti from 'canvas-confetti';
+type Task = {
+  id: string,
+  title: string,
+  completed: boolean,
+  createdAt: Date
+};
 
-confetti.create(document.getElementById('canvas') as HTMLCanvasElement, {
-  resize: true,
-  useWorker: true,
-})({ particleCount: 200, spread: 200 });
+const list = document.querySelector<HTMLUListElement>("#list");
+const form = document.querySelector<HTMLFormElement>("#task-form");
+const input = document.querySelector<HTMLInputElement>("#newTask");
+
+const tasks: Task[] = loadTasks();
+tasks.forEach(addListItem);
+
+/*
+Not all functions are generic, so we can do this:
+
+const list = document.getElementById("list") as HTMLUListElement;
+const form = document.getElementById("task-form") as HTMLFormElement;
+const input = document.getElementById("newTask") as HTMLInputElement;
+*/
+
+form?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (input?.value == '' || input?.value == null) return;
+  const newTask = {
+    id: uuidv4(),
+    title: input.value,
+    completed: false,
+    createdAt: new Date()
+  }
+  tasks.push(newTask);
+
+  addListItem(newTask);
+  input.value = '';
+});
+
+function addListItem(task: Task) {
+  const item = document.createElement("li");
+  const label = document.createElement("label");
+  const checkbox = document.createElement("input");
+  checkbox.addEventListener("change", () => {
+    task.completed = checkbox.checked;
+    saveTasks();
+  });
+  checkbox.type = "checkbox";
+  checkbox.checked = task.completed;
+
+  label.append(checkbox, task.title);
+  item.append(label);
+  list?.append(item);
+}
+
+function saveTasks() {
+  localStorage.setItem("Tasks", JSON.stringify(tasks));
+}
+
+function loadTasks(): Task[] {
+  const taskJSON = localStorage.getItem("Tasks");
+  if (taskJSON === null) return []
+  return JSON.parse(taskJSON)
+}
